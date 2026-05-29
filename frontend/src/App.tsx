@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { DeckInput } from "./components/DeckInput";
-import { HandView } from "./components/HandView";
 import { parseDeckList } from "./utils/deckParser";
 import { shuffle } from "./utils/shuffle";
+import { GameBoard } from "./components/GameBoard";
+import "./App.css";
 
 function App() {
   const [deckText, setDeckText] = useState("");
@@ -36,7 +37,11 @@ function App() {
         Draw opening hand
       </button>
 
-      <HandView cards={hand} />
+      <GameBoard
+        hand={hand}
+        lands={["Forest", "Command Tower"]}
+        permanents={["Sol Ring", "Arcane Signet"]}
+      />
 
     </main>
   );
