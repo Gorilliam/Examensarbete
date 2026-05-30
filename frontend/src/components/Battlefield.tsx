@@ -3,10 +3,11 @@ import type { CardData } from "../../../shared/types";
 type BattlefieldProps = {
   lands: string[];
   permanents: string[];
+  graveyard: string[];
   cardData: Record<string, CardData>;
 };
 
-export function Battlefield({ lands, permanents, cardData }: BattlefieldProps) {
+export function Battlefield({ lands, permanents, graveyard, cardData }: BattlefieldProps) {
   function renderCard(card: string, index: number) {
     const data = cardData[card];
 
@@ -29,11 +30,17 @@ export function Battlefield({ lands, permanents, cardData }: BattlefieldProps) {
           {permanents.map(renderCard)}
         </div>
       </div>
-
+    
       <div className="lands-zone">
         <h3>Lands</h3>
         <div className="land-grid">
           {lands.map(renderCard)}
+        </div>
+      </div>
+      <div className="graveyard-zone">
+        <h3>Graveyard</h3>
+        <div className="graveyard-grid">
+          {graveyard.map(renderCard)}
         </div>
       </div>
     </div>

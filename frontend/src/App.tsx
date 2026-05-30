@@ -6,6 +6,7 @@ import { GameBoard } from "./components/GameBoard";
 import { fetchCardByName } from "./api/cards";
 import { MulliganOverlay } from "./components/MulliganOverlay";
 import { useMulligan } from "./hooks/useMulligan";
+import {getDrawAmount} from "./utils/cardEffects";
 import "./App.css";
 
 import type { CardData } from "../../shared/types";
@@ -19,6 +20,7 @@ function App() {
   const [cardData, setCardData] = useState<Record<string, CardData>>({});
   const [lands, setLands] = useState<string[]>([]);
   const [permanents, setPermanents] = useState<string[]>([]);
+  const [graveyard, setGraveyard] = useState<string[]>([]);
   const [turn, setTurn] = useState(1);
   const [landPlayedThisTurn, setLandPlayedThisTurn] = useState(false);
   
@@ -49,6 +51,7 @@ function App() {
     setHand([]);
     setLands([]);
     setPermanents([]);
+    setGraveyard([]);
     setTurn(1);
     setLandPlayedThisTurn(false);
     resetMulliganFlow();
@@ -78,6 +81,9 @@ function App() {
     setHand(openingHand);
     setDeck(remainingLibrary);
     setTurn(1);
+    setLands([]);
+    setPermanents([]);
+    setGraveyard([]);
     setLandPlayedThisTurn(false);
     startMulliganFlow();
   }
@@ -94,42 +100,61 @@ function App() {
     setLandPlayedThisTurn(false);
   }
 
-  function handlePlayCard(cardName: string) {
-    if (mulliganPhase !== "complete") {
-      return;
-    }
-
-    const card = cardData[cardName];
-
-    if (!card) {
-      return;
-    }
-
-    const isLand = card.typeLine.toLowerCase().includes("land");
-
-    if (isLand && landPlayedThisTurn) {
-      alert("You can only play one land per turn.");
-      return;
-    }
-
-    setHand((currentHand) => {
-      const cardIndex = currentHand.findIndex((name) => name === cardName);
-
-      if (cardIndex === -1) {
-        return currentHand;
-      }
-
-      return currentHand.filter((_, index) => index !== cardIndex);
-    });
-
-    if (isLand) {
-      setLands((currentLands) => [...currentLands, cardName]);
-      setLandPlayedThisTurn(true);
-      return;
-    }
-
-    setPermanents((currentPermanents) => [...currentPermanents, cardName]);
+function handlePlayCard(cardName: string) {
+  if (mulliganPhase !== "complete") {
+    return;
   }
+
+  const card = cardData[cardName];
+
+  if (!card) {
+    return;
+  }
+
+  const typeLine = card.typeLine.toLowerCase();
+
+  const isLand = typeLine.includes("land");
+  const isInstantOrSorcery =
+    typeLine.includes("instant") || typeLine.includes("sorcery");
+
+  if (isLand && landPlayedThisTurn) {
+    alert("You can only play one land per turn.");
+    return;
+  }
+
+  setHand((currentHand) => {
+    const cardIndex = currentHand.findIndex((name) => name === cardName);
+
+    if (cardIndex === -1) {
+      return currentHand;
+    }
+
+    return currentHand.filter((_, index) => index !== cardIndex);
+  });
+
+  if (isLand) {
+    setLands((currentLands) => [...currentLands, cardName]);
+    setLandPlayedThisTurn(true);
+    return;
+  }
+
+if (isInstantOrSorcery) {
+  const drawAmount = getDrawAmount(card.oracleText);
+
+  if (drawAmount) {
+    const drawnCards = deck.slice(0, drawAmount);
+    const remainingDeck = deck.slice(drawAmount);
+
+    setHand((currentHand) => [...currentHand, ...drawnCards]);
+    setDeck(remainingDeck);
+  }
+
+  setGraveyard((currentGraveyard) => [...currentGraveyard, cardName]);
+  return;
+}
+
+  setPermanents((currentPermanents) => [...currentPermanents, cardName]);
+}
 
   return (
     <main style={{ padding: "2rem" }}>
@@ -169,6 +194,7 @@ function App() {
         hand={hand}
         lands={lands}
         permanents={permanents}
+        graveyard={graveyard}
         cardData={cardData}
         onPlayCard={handlePlayCard}
         onSelectBottomCard={selectBottomCard}
