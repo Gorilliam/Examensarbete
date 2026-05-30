@@ -4,8 +4,9 @@ type HandZoneProps = {
   cards: string[];
   cardData?: Record<string, CardData>;
   onPlayCard: (cardName: string) => void;
-  onSelectBottomCard: (cardName: string) => void;
+  onSelectBottomCard: (cardIndex: number) => void;
   isChoosingBottomCards: boolean;
+  selectedBottomCards: number[];
 };
 
 export function HandZone({
@@ -14,6 +15,7 @@ export function HandZone({
   onPlayCard,
   onSelectBottomCard,
   isChoosingBottomCards,
+  selectedBottomCards,
 }: HandZoneProps) {
   return (
     <div className="hand-zone">
@@ -23,14 +25,15 @@ export function HandZone({
         const middle = (cards.length - 1) / 2;
         const offset = index - middle;
         const rotation = offset * 6;
+        const isSelectedForBottom = selectedBottomCards.includes(index);
 
         return (
           <div
-            className="hand-card"
+            className={`hand-card ${isSelectedForBottom ? "selected-bottom-card" : ""}`}
             key={`${card}-${index}`}
             onClick={() => {
               if (isChoosingBottomCards) {
-                onSelectBottomCard(card);
+                onSelectBottomCard(index);
                 return;
               }
 

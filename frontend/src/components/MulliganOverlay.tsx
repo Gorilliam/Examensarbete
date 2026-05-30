@@ -3,7 +3,7 @@ type MulliganPhase = "reviewing_hand" | "choosing_bottom";
 type MulliganOverlayProps = {
   phase: MulliganPhase;
   mulliganCount: number;
-  selectedBottomCards: string[];
+  selectedBottomCards: number[];
   onMulligan: () => void;
   onKeep: () => void;
   onConfirmBottomCards: () => void;
@@ -15,8 +15,10 @@ export function MulliganOverlay({
   selectedBottomCards,
   onMulligan,
   onKeep,
+  onConfirmBottomCards,
 }: MulliganOverlayProps) {
   const keepCount = 7 - mulliganCount;
+  const remainingCardsToBottom = mulliganCount - selectedBottomCards.length;
 
   return (
     <div className="mulligan-overlay">
@@ -32,10 +34,13 @@ export function MulliganOverlay({
         )}
 
         {phase === "choosing_bottom" && (
-          <p>
-            Choose {mulliganCount - selectedBottomCards.length} card(s) to put
-            on bottom.
-          </p>
+        <>
+            <p>Choose {remainingCardsToBottom} card(s) to put on bottom.</p>
+
+            {selectedBottomCards.length === mulliganCount && (
+            <button onClick={onConfirmBottomCards}>Confirm</button>
+            )}
+        </>
         )}
       </div>
     </div>

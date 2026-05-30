@@ -24,7 +24,7 @@ export function useMulligan({
     useState<MulliganPhase>("not_started");
 
   const [mulliganCount, setMulliganCount] = useState(0);
-  const [selectedBottomCards, setSelectedBottomCards] = useState<string[]>([]);
+  const [selectedBottomCards, setSelectedBottomCards] = useState<number[]>([]);
 
   function startMulliganFlow() {
     setMulliganCount(0);
@@ -61,60 +61,42 @@ export function useMulligan({
     setMulliganPhase("choosing_bottom");
   }
 
-function selectBottomCard(cardName: string) {
+function selectBottomCard(cardIndex: number) {
   if (mulliganPhase !== "choosing_bottom") {
     return;
   }
 
-  if (selectedBottomCards.length >= mulliganCount) {
-    return;
-  }
+  setSelectedBottomCards((currentIndexes) => {
+    const alreadySelected = currentIndexes.includes(cardIndex);
 
-  const nextSelectedBottomCards = [...selectedBottomCards, cardName];
-
-  if (nextSelectedBottomCards.length === mulliganCount) {
-    let updatedHand = [...hand];
-
-    nextSelectedBottomCards.forEach((selectedCardName) => {
-      const cardIndex = updatedHand.findIndex(
-        (card) => card === selectedCardName
-      );
-
-      if (cardIndex !== -1) {
-        updatedHand.splice(cardIndex, 1);
-      }
-    });
-
-    setHand(updatedHand);
-    setDeck((currentDeck) => [...currentDeck, ...nextSelectedBottomCards]);
-    setSelectedBottomCards([]);
-    setMulliganPhase("complete");
-    return;
-  }
-
-  setSelectedBottomCards(nextSelectedBottomCards);
-}
-
-  function confirmBottomCards() {
-    if (selectedBottomCards.length !== mulliganCount) {
-      return;
+    if (alreadySelected) {
+      return currentIndexes.filter((index) => index !== cardIndex);
     }
 
-    let updatedHand = [...hand];
+    if (currentIndexes.length >= mulliganCount) {
+      return currentIndexes;
+    }
 
-    selectedBottomCards.forEach((cardName) => {
-      const cardIndex = updatedHand.findIndex((card) => card === cardName);
+    return [...currentIndexes, cardIndex];
+  });
+}
 
-      if (cardIndex !== -1) {
-        updatedHand.splice(cardIndex, 1);
-      }
-    });
-
-    setHand(updatedHand);
-    setDeck((currentDeck) => [...currentDeck, ...selectedBottomCards]);
-    setSelectedBottomCards([]);
-    setMulliganPhase("complete");
+function confirmBottomCards() {
+  if (selectedBottomCards.length !== mulliganCount) {
+    return;
   }
+
+  const bottomCards = selectedBottomCards.map((index) => hand[index]);
+
+  const updatedHand = hand.filter(
+    (_, index) => !selectedBottomCards.includes(index)
+  );
+
+  setHand(updatedHand);
+  setDeck((currentDeck) => [...currentDeck, ...bottomCards]);
+  setSelectedBottomCards([]);
+  setMulliganPhase("complete");
+}
 
   return {
     mulliganPhase,

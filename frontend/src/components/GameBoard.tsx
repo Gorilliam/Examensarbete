@@ -8,8 +8,9 @@ type GameBoardProps = {
   permanents: string[];
   cardData: Record<string, CardData>;
   onPlayCard: (cardName: string) => void;
-  onSelectBottomCard: (cardName: string) => void;
+  onSelectBottomCard: (cardIndex: number) => void;
   isChoosingBottomCards: boolean;
+  selectedBottomCards: number[];
 };
 
 export function GameBoard({
@@ -20,6 +21,7 @@ export function GameBoard({
   onPlayCard,
   onSelectBottomCard,
   isChoosingBottomCards,
+  selectedBottomCards,
 }: GameBoardProps) {
   return (
     <section className="game-board">
@@ -31,6 +33,7 @@ export function GameBoard({
         onPlayCard={onPlayCard}
         onSelectBottomCard={onSelectBottomCard}
         isChoosingBottomCards={isChoosingBottomCards}
+        selectedBottomCards={selectedBottomCards}
       />
     </section>
   );

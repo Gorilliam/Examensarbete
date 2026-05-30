@@ -170,6 +170,7 @@ function App() {
         onPlayCard={handlePlayCard}
         onSelectBottomCard={selectBottomCard}
         isChoosingBottomCards={mulliganPhase === "choosing_bottom"}
+        selectedBottomCards={selectedBottomCards}
       />
     </main>
   );
