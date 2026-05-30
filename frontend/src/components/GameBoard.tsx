@@ -19,7 +19,7 @@ export function GameBoard({
 }: GameBoardProps) {
   return (
     <section className="game-board">
-      <Battlefield lands={lands} permanents={permanents} />
+      <Battlefield lands={lands} permanents={permanents} cardData={cardData} />
       <HandZone cards={hand} cardData={cardData} onPlayCard={onPlayCard} />
     </section>
   );

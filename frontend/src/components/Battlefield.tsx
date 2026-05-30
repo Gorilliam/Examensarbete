@@ -1,32 +1,39 @@
+import type { CardData } from "../../../shared/types";
+
 type BattlefieldProps = {
   lands: string[];
   permanents: string[];
+  cardData: Record<string, CardData>;
 };
 
-export function Battlefield({ lands, permanents }: BattlefieldProps) {
+export function Battlefield({ lands, permanents, cardData }: BattlefieldProps) {
+  function renderCard(card: string, index: number) {
+    const data = cardData[card];
+
+    return (
+      <div className="battlefield-card" key={`${card}-${index}`}>
+        {data?.imageUrl ? (
+          <img src={data.imageUrl} alt={data.name} className="card-image" />
+        ) : (
+          <span>{card}</span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="battlefield">
       <div className="permanents-zone">
         <h3>Permanents</h3>
-
         <div className="permanent-grid">
-          {permanents.map((card, index) => (
-            <div className="battlefield-card" key={`${card}-${index}`}>
-              {card}
-            </div>
-          ))}
+          {permanents.map(renderCard)}
         </div>
       </div>
 
       <div className="lands-zone">
         <h3>Lands</h3>
-
         <div className="land-grid">
-          {lands.map((card, index) => (
-            <div className="battlefield-card land-card" key={`${card}-${index}`}>
-              {card}
-            </div>
-          ))}
+          {lands.map(renderCard)}
         </div>
       </div>
     </div>
