@@ -1,11 +1,16 @@
+import type { CardData } from "../../../shared/types";
+
 type HandZoneProps = {
   cards: string[];
+  cardData?: Record<string, CardData>;
 };
 
-export function HandZone({ cards }: HandZoneProps) {
+export function HandZone({ cards, cardData = {} }: HandZoneProps) {
   return (
     <div className="hand-zone">
       {cards.map((card, index) => {
+        const data = cardData[card];
+
         const middle = (cards.length - 1) / 2;
         const offset = index - middle;
         const rotation = offset * 6;
@@ -19,7 +24,11 @@ export function HandZone({ cards }: HandZoneProps) {
               zIndex: index,
             }}
           >
-            {card}
+            {data?.imageUrl ? (
+              <img src={data.imageUrl} alt={data.name} className="card-image" />
+            ) : (
+              <span>{card}</span>
+            )}
           </div>
         );
       })}

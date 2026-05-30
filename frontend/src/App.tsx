@@ -3,18 +3,38 @@ import { DeckInput } from "./components/DeckInput";
 import { parseDeckList } from "./utils/deckParser";
 import { shuffle } from "./utils/shuffle";
 import { GameBoard } from "./components/GameBoard";
+import { fetchCardByName } from "./api/cards";
 import "./App.css";
+
+import type { CardData } from "../../shared/types";
+
 
 function App() {
   const [deckText, setDeckText] = useState("");
   const [deck, setDeck] = useState<string[]>([]);
   const [hand, setHand] = useState<string[]>([]);
+  const [cardData, setCardData] = useState<Record<string, CardData>>({});
 
-  function handleImportDeck() {
-    const parsedDeck = parseDeckList(deckText);
-    setDeck(parsedDeck);
-    setHand([]);
-  }
+async function handleImportDeck() {
+  const parsedDeck = parseDeckList(deckText);
+  setDeck(parsedDeck);
+  setHand([]);
+
+  const uniqueCardNames = [...new Set(parsedDeck)];
+
+  const fetchedCards = await Promise.all(
+    uniqueCardNames.map(async (name) => {
+      const card = await fetchCardByName(name);
+      return [name, card] as const;
+    })
+  );
+
+  const mappedCards = Object.fromEntries(fetchedCards);
+
+  console.log("Fetched card data:", mappedCards);
+
+  setCardData(mappedCards);
+}
 
   function handleDrawOpeningHand() {
     const shuffledDeck = shuffle(deck);
@@ -41,6 +61,7 @@ function App() {
         hand={hand}
         lands={["Forest", "Command Tower"]}
         permanents={["Sol Ring", "Arcane Signet"]}
+        cardData={cardData}
       />
 
     </main>

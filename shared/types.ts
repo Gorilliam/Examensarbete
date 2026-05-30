@@ -1,6 +1,9 @@
-export type ParsedCard = {
+export type CardData = {
   name: string;
-  quantity: number;
+  manaCost: string;
+  typeLine: string;
+  oracleText: string;
+  imageUrl: string;
 };
 
 export type Deck = {

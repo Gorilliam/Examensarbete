@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cardsRouter from "./routes/cards";
 
 const app = express();
 
@@ -13,6 +14,8 @@ app.get("/", (_req, res) => {
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/cards", cardsRouter);
 
 const port = process.env.PORT || 3001;
 
