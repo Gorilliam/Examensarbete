@@ -12,17 +12,23 @@ import type { CardData } from "../../shared/types";
 function App() {
   const [deckText, setDeckText] = useState("");
   const [deck, setDeck] = useState<string[]>([]);
+  const [importedDeckSize, setImportedDeckSize] = useState(0);
   const [hand, setHand] = useState<string[]>([]);
   const [cardData, setCardData] = useState<Record<string, CardData>>({});
   const [lands, setLands] = useState<string[]>([]);
   const [permanents, setPermanents] = useState<string[]>([]);
+  const [turn, setTurn] = useState(1);
+  const [landPlayedThisTurn, setLandPlayedThisTurn] = useState(false);
 
 async function handleImportDeck() {
   const parsedDeck = parseDeckList(deckText);
   setDeck(parsedDeck);
+  setImportedDeckSize(parsedDeck.length);
   setHand([]);
   setLands([]);
   setPermanents([]);
+  setTurn(1);
+  setLandPlayedThisTurn(false);
 
   const uniqueCardNames = [...new Set(parsedDeck)];
 
@@ -40,16 +46,42 @@ async function handleImportDeck() {
   setCardData(mappedCards);
 }
 
-  function handleDrawOpeningHand() {
-    const shuffledDeck = shuffle(deck);
-    setHand(shuffledDeck.slice(0, 7));
+function handleDrawOpeningHand() {
+  const shuffledDeck = shuffle(deck);
+
+  const openingHand = shuffledDeck.slice(0, 7);
+  const remainingLibrary = shuffledDeck.slice(7);
+
+  setHand(openingHand);
+  setDeck(remainingLibrary);
+  setTurn(1);
+  setLandPlayedThisTurn(false);
+}
+
+  function handleNextTurn() {
+  if (deck.length > 0) {
+    const [drawnCard, ...remainingDeck] = deck;
+
+    setHand((currentHand) => [...currentHand, drawnCard]);
+    setDeck(remainingDeck);
   }
 
+  setTurn((currentTurn) => currentTurn + 1);
+  setLandPlayedThisTurn(false);
+}
 
-  function handlePlayCard(cardName: string) {
+
+function handlePlayCard(cardName: string) {
   const card = cardData[cardName];
 
   if (!card) {
+    return;
+  }
+
+  const isLand = card.typeLine.toLowerCase().includes("land");
+
+  if (isLand && landPlayedThisTurn) {
+    alert("You can only play one land per turn.");
     return;
   }
 
@@ -63,11 +95,13 @@ async function handleImportDeck() {
     return currentHand.filter((_, index) => index !== cardIndex);
   });
 
-  if (card.typeLine.toLowerCase().includes("land")) {
+  if (isLand) {
     setLands((currentLands) => [...currentLands, cardName]);
-  } else {
-    setPermanents((currentPermanents) => [...currentPermanents, cardName]);
+    setLandPlayedThisTurn(true);
+    return;
   }
+
+  setPermanents((currentPermanents) => [...currentPermanents, cardName]);
 }
 
   return (
@@ -80,7 +114,14 @@ async function handleImportDeck() {
         onImport={handleImportDeck}
       />
 
-      <p>Imported cards: {deck.length}</p>
+      <p>Imported cards: {importedDeckSize}</p>
+      <p>Turn: {turn}</p>
+      <p>Cards in library: {deck.length}</p>
+      <p>Land played this turn: {landPlayedThisTurn ? "Yes" : "No"}</p>
+
+      <button disabled={deck.length === 0} onClick={handleNextTurn}>
+        Next turn
+      </button>
 
       <button disabled={deck.length < 7} onClick={handleDrawOpeningHand}>
         Draw opening hand
