@@ -4,9 +4,17 @@ type HandZoneProps = {
   cards: string[];
   cardData?: Record<string, CardData>;
   onPlayCard: (cardName: string) => void;
+  onSelectBottomCard: (cardName: string) => void;
+  isChoosingBottomCards: boolean;
 };
 
-export function HandZone({ cards, cardData = {}, onPlayCard }: HandZoneProps) {
+export function HandZone({
+  cards,
+  cardData = {},
+  onPlayCard,
+  onSelectBottomCard,
+  isChoosingBottomCards,
+}: HandZoneProps) {
   return (
     <div className="hand-zone">
       {cards.map((card, index) => {
@@ -20,7 +28,14 @@ export function HandZone({ cards, cardData = {}, onPlayCard }: HandZoneProps) {
           <div
             className="hand-card"
             key={`${card}-${index}`}
-            onClick={() => onPlayCard(card)}
+            onClick={() => {
+              if (isChoosingBottomCards) {
+                onSelectBottomCard(card);
+                return;
+              }
+
+              onPlayCard(card);
+            }}
             style={{
               transform: `rotate(${rotation}deg) translateY(${Math.abs(offset) * 6}px)`,
               zIndex: index,
