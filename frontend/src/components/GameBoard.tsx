@@ -7,6 +7,7 @@ type GameBoardProps = {
   lands: string[];
   permanents: string[];
   cardData: Record<string, CardData>;
+  onPlayCard: (cardName: string) => void;
 };
 
 export function GameBoard({
@@ -14,11 +15,12 @@ export function GameBoard({
   lands,
   permanents,
   cardData,
+  onPlayCard,
 }: GameBoardProps) {
   return (
     <section className="game-board">
       <Battlefield lands={lands} permanents={permanents} />
-      <HandZone cards={hand} cardData={cardData} />
+      <HandZone cards={hand} cardData={cardData} onPlayCard={onPlayCard} />
     </section>
   );
 }

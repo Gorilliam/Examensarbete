@@ -14,11 +14,15 @@ function App() {
   const [deck, setDeck] = useState<string[]>([]);
   const [hand, setHand] = useState<string[]>([]);
   const [cardData, setCardData] = useState<Record<string, CardData>>({});
+  const [lands, setLands] = useState<string[]>([]);
+  const [permanents, setPermanents] = useState<string[]>([]);
 
 async function handleImportDeck() {
   const parsedDeck = parseDeckList(deckText);
   setDeck(parsedDeck);
   setHand([]);
+  setLands([]);
+  setPermanents([]);
 
   const uniqueCardNames = [...new Set(parsedDeck)];
 
@@ -41,6 +45,31 @@ async function handleImportDeck() {
     setHand(shuffledDeck.slice(0, 7));
   }
 
+
+  function handlePlayCard(cardName: string) {
+  const card = cardData[cardName];
+
+  if (!card) {
+    return;
+  }
+
+  setHand((currentHand) => {
+    const cardIndex = currentHand.findIndex((name) => name === cardName);
+
+    if (cardIndex === -1) {
+      return currentHand;
+    }
+
+    return currentHand.filter((_, index) => index !== cardIndex);
+  });
+
+  if (card.typeLine.toLowerCase().includes("land")) {
+    setLands((currentLands) => [...currentLands, cardName]);
+  } else {
+    setPermanents((currentPermanents) => [...currentPermanents, cardName]);
+  }
+}
+
   return (
     <main style={{ padding: "2rem" }}>
       <h1>Magic Deck Simulator</h1>
@@ -59,9 +88,10 @@ async function handleImportDeck() {
 
       <GameBoard
         hand={hand}
-        lands={["Forest", "Command Tower"]}
-        permanents={["Sol Ring", "Arcane Signet"]}
+        lands={lands}
+        permanents={permanents}
         cardData={cardData}
+        onPlayCard={handlePlayCard}
       />
 
     </main>
