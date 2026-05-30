@@ -13,6 +13,7 @@ import type { CardData } from "../../shared/types";
 function App() {
   const [deckText, setDeckText] = useState("");
   const [deck, setDeck] = useState<string[]>([]);
+  const [originalDeck, setOriginalDeck] = useState<string[]>([]);
   const [importedDeckSize, setImportedDeckSize] = useState(0);
   const [hand, setHand] = useState<string[]>([]);
   const [cardData, setCardData] = useState<Record<string, CardData>>({});
@@ -20,6 +21,7 @@ function App() {
   const [permanents, setPermanents] = useState<string[]>([]);
   const [turn, setTurn] = useState(1);
   const [landPlayedThisTurn, setLandPlayedThisTurn] = useState(false);
+  
 
   const {
     mulliganPhase,
@@ -42,6 +44,7 @@ function App() {
     const parsedDeck = parseDeckList(deckText);
 
     setDeck(parsedDeck);
+    setOriginalDeck(parsedDeck);
     setImportedDeckSize(parsedDeck.length);
     setHand([]);
     setLands([]);
@@ -67,7 +70,7 @@ function App() {
   }
 
   function handleDrawOpeningHand() {
-    const shuffledDeck = shuffle(deck);
+    const shuffledDeck = shuffle(originalDeck);
 
     const openingHand = shuffledDeck.slice(0, 7);
     const remainingLibrary = shuffledDeck.slice(7);
@@ -147,7 +150,7 @@ function App() {
         Next turn
       </button>
 
-      <button disabled={deck.length < 7 || hand.length > 0} onClick={handleDrawOpeningHand}>
+      <button disabled={originalDeck.length < 7 } onClick={handleDrawOpeningHand}>
         Draw opening hand
       </button>
 
