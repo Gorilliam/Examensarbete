@@ -132,3 +132,46 @@
   outline: 4px solid #38bdf8;
   box-shadow: 0 0 24px #38bdf8;
 }
+
+.ramp-selector {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: white;
+}
+
+.ramp-targets {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 900px;
+}
+
+.ramp-target-card {
+  width: 120px;
+  height: 170px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+}
+
+.ramp-target-card:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 24px #38bdf8;
+}
+
+.ramp-target-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
+}

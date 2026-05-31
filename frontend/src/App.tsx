@@ -6,7 +6,9 @@ import { GameBoard } from "./components/GameBoard";
 import { fetchCardByName } from "./api/cards";
 import { MulliganOverlay } from "./components/MulliganOverlay";
 import { useMulligan } from "./hooks/useMulligan";
-import {getDrawAmount} from "./utils/cardEffects";
+import { getDrawAmount, getRampTargetTypes,
+  type RampTargetType} from "./utils/cardEffects";
+import {RampSelector} from "./components/RampSelector";
 import "./App.css";
 
 import type { CardData } from "../../shared/types";
@@ -23,6 +25,8 @@ function App() {
   const [graveyard, setGraveyard] = useState<string[]>([]);
   const [turn, setTurn] = useState(1);
   const [landPlayedThisTurn, setLandPlayedThisTurn] = useState(false);
+  const [pendingRampSpell, setPendingRampSpell] = useState<string | null>(null);
+  const [rampTargetTypes, setRampTargetTypes] = useState<RampTargetType[]>([]);
   
 
   const {
@@ -105,6 +109,10 @@ function handlePlayCard(cardName: string) {
     return;
   }
 
+  if (pendingRampSpell) {
+  return;
+}
+
   const card = cardData[cardName];
 
   if (!card) {
@@ -147,6 +155,16 @@ if (isInstantOrSorcery) {
 
     setHand((currentHand) => [...currentHand, ...drawnCards]);
     setDeck(remainingDeck);
+    setGraveyard((currentGraveyard) => [...currentGraveyard, cardName]);
+    return;
+  }
+
+  const detectedRampTargetTypes = getRampTargetTypes(card.oracleText);
+
+  if (detectedRampTargetTypes) {
+    setPendingRampSpell(cardName);
+    setRampTargetTypes(detectedRampTargetTypes);
+    return;
   }
 
   setGraveyard((currentGraveyard) => [...currentGraveyard, cardName]);
@@ -154,6 +172,56 @@ if (isInstantOrSorcery) {
 }
 
   setPermanents((currentPermanents) => [...currentPermanents, cardName]);
+}
+
+function getValidRampTargets() {
+  return deck.filter((cardName) => {
+    const card = cardData[cardName];
+
+    if (!card) {
+      return false;
+    }
+
+    const typeLine = card.typeLine.toLowerCase();
+
+    if (!typeLine.includes("land")) {
+      return false;
+    }
+
+    if (rampTargetTypes.includes("land")) {
+      return true;
+    }
+
+    if (rampTargetTypes.includes("basic-land") && typeLine.includes("basic")) {
+      return true;
+    }
+
+    return rampTargetTypes.some((targetType) => typeLine.includes(targetType));
+  });
+}
+
+function handleResolveRamp(targetCardName: string) {
+  if (!pendingRampSpell) {
+    return;
+  }
+
+  const targetIndex = deck.findIndex((cardName) => cardName === targetCardName);
+
+  if (targetIndex === -1) {
+    return;
+  }
+
+  const targetCard = deck[targetIndex];
+
+  setDeck((currentDeck) =>
+    currentDeck.filter((_, index) => index !== targetIndex)
+  );
+
+  setLands((currentLands) => [...currentLands, targetCard]);
+  setGraveyard((currentGraveyard) => [...currentGraveyard, pendingRampSpell]);
+
+  setPendingRampSpell(null);
+  setRampTargetTypes([]);
 }
 
   return (
@@ -189,6 +257,15 @@ if (isInstantOrSorcery) {
         onConfirmBottomCards={confirmBottomCards}
       />
       )}
+
+{pendingRampSpell && (
+  <RampSelector
+    pendingRampSpell={pendingRampSpell}
+    targets={getValidRampTargets()}
+    cardData={cardData}
+    onSelectTarget={handleResolveRamp}
+  />
+)}
 
       <GameBoard
         hand={hand}
