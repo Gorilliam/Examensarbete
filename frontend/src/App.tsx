@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { DeckInput } from "./components/DeckInput";
 import { parseDeckList } from "./utils/deckParser";
-import { shuffle } from "./utils/shuffle";
 import { GameBoard } from "./components/GameBoard";
 import { fetchCardByName } from "./api/cards";
 import { MulliganOverlay } from "./components/MulliganOverlay";
 import { useMulligan } from "./hooks/useMulligan";
-import { getDrawAmount, getRampTargetTypes,
-  type RampTargetType} from "./utils/cardEffects";
+import { useRamp } from "./hooks/useRamp";
+import { useGameActions } from "./hooks/useGameActions";
 import {RampSelector} from "./components/RampSelector";
 import "./App.css";
 
@@ -25,8 +24,6 @@ function App() {
   const [graveyard, setGraveyard] = useState<string[]>([]);
   const [turn, setTurn] = useState(1);
   const [landPlayedThisTurn, setLandPlayedThisTurn] = useState(false);
-  const [pendingRampSpell, setPendingRampSpell] = useState<string | null>(null);
-  const [rampTargetTypes, setRampTargetTypes] = useState<RampTargetType[]>([]);
   
 
   const {
@@ -46,6 +43,44 @@ function App() {
     setHand,
   });
 
+  const {
+  pendingRampSpell,
+  startRampResolution,
+  getValidRampTargets,
+  resolveRamp,
+  resetRamp,
+} = useRamp({
+  deck,
+  cardData,
+  setDeck,
+  setLands,
+  setGraveyard,
+});
+
+const {
+  drawOpeningHand,
+  nextTurn,
+  playCard,
+} = useGameActions({
+  deck,
+  originalDeck,
+  hand,
+  cardData,
+  landPlayedThisTurn,
+  mulliganPhase,
+  pendingRampSpell,
+  setDeck,
+  setHand,
+  setLands,
+  setPermanents,
+  setGraveyard,
+  setTurn,
+  setLandPlayedThisTurn,
+  startMulliganFlow,
+  resetRamp,
+  startRampResolution,
+});
+
   async function handleImportDeck() {
     const parsedDeck = parseDeckList(deckText);
 
@@ -59,6 +94,7 @@ function App() {
     setTurn(1);
     setLandPlayedThisTurn(false);
     resetMulliganFlow();
+    resetRamp();
 
     const uniqueCardNames = [...new Set(parsedDeck)];
 
@@ -76,153 +112,6 @@ function App() {
     setCardData(mappedCards);
   }
 
-  function handleDrawOpeningHand() {
-    const shuffledDeck = shuffle(originalDeck);
-
-    const openingHand = shuffledDeck.slice(0, 7);
-    const remainingLibrary = shuffledDeck.slice(7);
-
-    setHand(openingHand);
-    setDeck(remainingLibrary);
-    setTurn(1);
-    setLands([]);
-    setPermanents([]);
-    setGraveyard([]);
-    setLandPlayedThisTurn(false);
-    startMulliganFlow();
-  }
-
-  function handleNextTurn() {
-    if (deck.length > 0) {
-      const [drawnCard, ...remainingDeck] = deck;
-
-      setHand((currentHand) => [...currentHand, drawnCard]);
-      setDeck(remainingDeck);
-    }
-
-    setTurn((currentTurn) => currentTurn + 1);
-    setLandPlayedThisTurn(false);
-  }
-
-function handlePlayCard(cardName: string) {
-  if (mulliganPhase !== "complete") {
-    return;
-  }
-
-  if (pendingRampSpell) {
-  return;
-}
-
-  const card = cardData[cardName];
-
-  if (!card) {
-    return;
-  }
-
-  const typeLine = card.typeLine.toLowerCase();
-
-  const isLand = typeLine.includes("land");
-  const isInstantOrSorcery =
-    typeLine.includes("instant") || typeLine.includes("sorcery");
-
-  if (isLand && landPlayedThisTurn) {
-    alert("You can only play one land per turn.");
-    return;
-  }
-
-  setHand((currentHand) => {
-    const cardIndex = currentHand.findIndex((name) => name === cardName);
-
-    if (cardIndex === -1) {
-      return currentHand;
-    }
-
-    return currentHand.filter((_, index) => index !== cardIndex);
-  });
-
-  if (isLand) {
-    setLands((currentLands) => [...currentLands, cardName]);
-    setLandPlayedThisTurn(true);
-    return;
-  }
-
-if (isInstantOrSorcery) {
-  const drawAmount = getDrawAmount(card.oracleText);
-
-  if (drawAmount) {
-    const drawnCards = deck.slice(0, drawAmount);
-    const remainingDeck = deck.slice(drawAmount);
-
-    setHand((currentHand) => [...currentHand, ...drawnCards]);
-    setDeck(remainingDeck);
-    setGraveyard((currentGraveyard) => [...currentGraveyard, cardName]);
-    return;
-  }
-
-  const detectedRampTargetTypes = getRampTargetTypes(card.oracleText);
-
-  if (detectedRampTargetTypes) {
-    setPendingRampSpell(cardName);
-    setRampTargetTypes(detectedRampTargetTypes);
-    return;
-  }
-
-  setGraveyard((currentGraveyard) => [...currentGraveyard, cardName]);
-  return;
-}
-
-  setPermanents((currentPermanents) => [...currentPermanents, cardName]);
-}
-
-function getValidRampTargets() {
-  return deck.filter((cardName) => {
-    const card = cardData[cardName];
-
-    if (!card) {
-      return false;
-    }
-
-    const typeLine = card.typeLine.toLowerCase();
-
-    if (!typeLine.includes("land")) {
-      return false;
-    }
-
-    if (rampTargetTypes.includes("land")) {
-      return true;
-    }
-
-    if (rampTargetTypes.includes("basic-land") && typeLine.includes("basic")) {
-      return true;
-    }
-
-    return rampTargetTypes.some((targetType) => typeLine.includes(targetType));
-  });
-}
-
-function handleResolveRamp(targetCardName: string) {
-  if (!pendingRampSpell) {
-    return;
-  }
-
-  const targetIndex = deck.findIndex((cardName) => cardName === targetCardName);
-
-  if (targetIndex === -1) {
-    return;
-  }
-
-  const targetCard = deck[targetIndex];
-
-  setDeck((currentDeck) =>
-    currentDeck.filter((_, index) => index !== targetIndex)
-  );
-
-  setLands((currentLands) => [...currentLands, targetCard]);
-  setGraveyard((currentGraveyard) => [...currentGraveyard, pendingRampSpell]);
-
-  setPendingRampSpell(null);
-  setRampTargetTypes([]);
-}
 
   return (
     <main style={{ padding: "2rem" }}>
@@ -239,11 +128,11 @@ function handleResolveRamp(targetCardName: string) {
       <p>Cards in library: {deck.length}</p>
       <p>Land played this turn: {landPlayedThisTurn ? "Yes" : "No"}</p>
 
-      <button disabled={deck.length === 0} onClick={handleNextTurn}>
+      <button disabled={deck.length === 0} onClick={nextTurn}>
         Next turn
       </button>
 
-      <button disabled={originalDeck.length < 7 } onClick={handleDrawOpeningHand}>
+      <button disabled={originalDeck.length < 7 } onClick={drawOpeningHand}>
         Draw opening hand
       </button>
 
@@ -263,7 +152,7 @@ function handleResolveRamp(targetCardName: string) {
     pendingRampSpell={pendingRampSpell}
     targets={getValidRampTargets()}
     cardData={cardData}
-    onSelectTarget={handleResolveRamp}
+    onSelectTarget={resolveRamp}
   />
 )}
 
@@ -273,7 +162,7 @@ function handleResolveRamp(targetCardName: string) {
         permanents={permanents}
         graveyard={graveyard}
         cardData={cardData}
-        onPlayCard={handlePlayCard}
+        onPlayCard={playCard}
         onSelectBottomCard={selectBottomCard}
         isChoosingBottomCards={mulliganPhase === "choosing_bottom"}
         selectedBottomCards={selectedBottomCards}
