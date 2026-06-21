@@ -1,12 +1,12 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { CardData } from "../../../shared/types";
+import type { CardData, BattlefieldCard } from "../../../shared/types";
 import type { RampTargetType } from "../utils/cardEffects";
 
 type UseRampProps = {
   deck: string[];
   cardData: Record<string, CardData>;
   setDeck: Dispatch<SetStateAction<string[]>>;
-  setLands: Dispatch<SetStateAction<string[]>>;
+  setLands: Dispatch<SetStateAction<BattlefieldCard[]>>;
   setGraveyard: Dispatch<SetStateAction<string[]>>;
 };
 
@@ -32,19 +32,13 @@ export function useRamp({
     return deck.filter((cardName) => {
       const card = cardData[cardName];
 
-      if (!card) {
-        return false;
-      }
+      if (!card) return false;
 
       const typeLine = card.typeLine.toLowerCase();
 
-      if (!typeLine.includes("land")) {
-        return false;
-      }
+      if (!typeLine.includes("land")) return false;
 
-      if (rampTargetTypes.includes("land")) {
-        return true;
-      }
+      if (rampTargetTypes.includes("land")) return true;
 
       if (
         rampTargetTypes.includes("basic-land") &&
@@ -60,25 +54,28 @@ export function useRamp({
   }
 
   function resolveRamp(targetCardName: string) {
-    if (!pendingRampSpell) {
-      return;
-    }
+    if (!pendingRampSpell) return;
 
     const targetIndex = deck.findIndex(
       (cardName) => cardName === targetCardName
     );
 
-    if (targetIndex === -1) {
-      return;
-    }
+    if (targetIndex === -1) return;
 
-    const targetCard = deck[targetIndex];
+    const targetCardNameFromDeck = deck[targetIndex];
 
     setDeck((currentDeck) =>
       currentDeck.filter((_, index) => index !== targetIndex)
     );
 
-    setLands((currentLands) => [...currentLands, targetCard]);
+    setLands((currentLands) => [
+      ...currentLands,
+      {
+        id: crypto.randomUUID(),
+        name: targetCardNameFromDeck,
+      },
+    ]);
+
     setGraveyard((currentGraveyard) => [
       ...currentGraveyard,
       pendingRampSpell,

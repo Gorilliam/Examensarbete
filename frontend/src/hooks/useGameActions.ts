@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { CardData } from "../../../shared/types";
+import type { CardData, BattlefieldCard } from "../../../shared/types";
 import { shuffle } from "../utils/shuffle";
 import { getDrawAmount, getRampTargetTypes } from "../utils/cardEffects";
 import type { MulliganPhase } from "./useMulligan";
@@ -13,10 +13,12 @@ type UseGameActionsProps = {
   landPlayedThisTurn: boolean;
   mulliganPhase: MulliganPhase;
   pendingRampSpell: string | null;
+  canPayManaCost: (manaCost: string) => boolean;
+  payManaCost: (manaCost: string) => boolean;
 
   setDeck: Dispatch<SetStateAction<string[]>>;
   setHand: Dispatch<SetStateAction<string[]>>;
-  setLands: Dispatch<SetStateAction<string[]>>;
+  setLands: Dispatch<SetStateAction<BattlefieldCard[]>>;
   setPermanents: Dispatch<SetStateAction<string[]>>;
   setGraveyard: Dispatch<SetStateAction<string[]>>;
   setTurn: Dispatch<SetStateAction<number>>;
@@ -24,6 +26,7 @@ type UseGameActionsProps = {
 
   startMulliganFlow: () => void;
   resetRamp: () => void;
+  resetMana: () => void;
   startRampResolution: (
     spellName: string,
     targetTypes: RampTargetType[]
@@ -46,7 +49,10 @@ export function useGameActions({
   setLandPlayedThisTurn,
   startMulliganFlow,
   resetRamp,
+  resetMana,
   startRampResolution,
+  canPayManaCost,
+  payManaCost,
 }: UseGameActionsProps) {
   function drawOpeningHand() {
     const shuffledDeck = shuffle(originalDeck);
@@ -59,6 +65,7 @@ export function useGameActions({
     setTurn(1);
     setLandPlayedThisTurn(false);
     resetRamp();
+    resetMana();
     startMulliganFlow();
   }
 
@@ -73,6 +80,7 @@ export function useGameActions({
     setDeck(remainingDeck);
     setTurn((currentTurn) => currentTurn + 1);
     setLandPlayedThisTurn(false);
+    resetMana();
   }
 
   function playCard(cardName: string) {
@@ -96,6 +104,19 @@ export function useGameActions({
       return;
     }
 
+    if (!isLand && !canPayManaCost(card.manaCost)) {
+      alert("Not enough mana.");
+      return;
+    }
+
+    if (!isLand) {
+      const paymentSuccessful = payManaCost(card.manaCost);
+
+      if (!paymentSuccessful) {
+        return;
+      }
+    }
+
     setHand((currentHand) => {
       const cardIndex = currentHand.findIndex((name) => name === cardName);
 
@@ -107,7 +128,14 @@ export function useGameActions({
     });
 
     if (isLand) {
-      setLands((currentLands) => [...currentLands, cardName]);
+      setLands((currentLands) => [
+        ...currentLands,
+        {
+          id: crypto.randomUUID(),
+          name: cardName,
+        },
+      ]);
+
       setLandPlayedThisTurn(true);
       return;
     }

@@ -6,11 +6,14 @@ import { fetchCardByName } from "./api/cards";
 import { MulliganOverlay } from "./components/MulliganOverlay";
 import { useMulligan } from "./hooks/useMulligan";
 import { useRamp } from "./hooks/useRamp";
+import {useMana} from "./hooks/useMana";
+import {ManaPoolDisplay} from "./components/ManaPoolDisplay";
+import {ManaChoiceOverlay} from "./components/ManaChoiceOverlay";
 import { useGameActions } from "./hooks/useGameActions";
 import {RampSelector} from "./components/RampSelector";
 import "./App.css";
 
-import type { CardData } from "../../shared/types";
+import type { CardData, BattlefieldCard } from "../../shared/types";
 
 function App() {
   const [deckText, setDeckText] = useState("");
@@ -19,7 +22,7 @@ function App() {
   const [importedDeckSize, setImportedDeckSize] = useState(0);
   const [hand, setHand] = useState<string[]>([]);
   const [cardData, setCardData] = useState<Record<string, CardData>>({});
-  const [lands, setLands] = useState<string[]>([]);
+  const [lands, setLands] = useState<BattlefieldCard[]>([]);
   const [permanents, setPermanents] = useState<string[]>([]);
   const [graveyard, setGraveyard] = useState<string[]>([]);
   const [turn, setTurn] = useState(1);
@@ -58,6 +61,19 @@ function App() {
 });
 
 const {
+  manaPool,
+  tappedCards,
+  pendingManaSource,
+  tapForMana,
+  chooseManaColor,
+  resetMana,
+  canPayManaCost,
+  payManaCost,
+} = useMana({
+  cardData,
+});
+
+const {
   drawOpeningHand,
   nextTurn,
   playCard,
@@ -79,7 +95,12 @@ const {
   startMulliganFlow,
   resetRamp,
   startRampResolution,
+  resetMana,
+  canPayManaCost,
+  payManaCost,
 });
+
+
 
   async function handleImportDeck() {
     const parsedDeck = parseDeckList(deckText);
@@ -95,21 +116,24 @@ const {
     setLandPlayedThisTurn(false);
     resetMulliganFlow();
     resetRamp();
+    resetMana();
 
     const uniqueCardNames = [...new Set(parsedDeck)];
 
-    const fetchedCards = await Promise.all(
-      uniqueCardNames.map(async (name) => {
-        const card = await fetchCardByName(name);
-        return [name, card] as const;
-      })
-    );
+const fetchedCards = await Promise.allSettled(
+  uniqueCardNames.map(async (name) => {
+    const card = await fetchCardByName(name);
+    return [name, card] as const;
+  })
+);
 
-    const mappedCards = Object.fromEntries(fetchedCards);
+const mappedCards = Object.fromEntries(
+  fetchedCards
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value)
+);
 
-    console.log("Fetched card data:", mappedCards);
-
-    setCardData(mappedCards);
+setCardData(mappedCards);
   }
 
 
@@ -128,6 +152,14 @@ const {
       <p>Cards in library: {deck.length}</p>
       <p>Land played this turn: {landPlayedThisTurn ? "Yes" : "No"}</p>
 
+      <ManaPoolDisplay manaPool={manaPool} />
+
+      {pendingManaSource && (
+      <ManaChoiceOverlay
+        sourceName={pendingManaSource}
+        onChooseColor={chooseManaColor}
+      />
+    )}
       <button disabled={deck.length === 0} onClick={nextTurn}>
         Next turn
       </button>
@@ -166,6 +198,8 @@ const {
         onSelectBottomCard={selectBottomCard}
         isChoosingBottomCards={mulliganPhase === "choosing_bottom"}
         selectedBottomCards={selectedBottomCards}
+        tappedCards={tappedCards}
+        onTapForMana={tapForMana}
       />
     </main>
   );

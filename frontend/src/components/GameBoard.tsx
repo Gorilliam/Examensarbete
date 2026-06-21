@@ -1,10 +1,10 @@
-import type { CardData } from "../../../shared/types";
+import type { CardData, BattlefieldCard } from "../../../shared/types";
 import { Battlefield } from "./Battlefield";
 import { HandZone } from "./HandZone";
 
 type GameBoardProps = {
   hand: string[];
-  lands: string[];
+  lands: BattlefieldCard[];
   permanents: string[];
   graveyard: string[];
   cardData: Record<string, CardData>;
@@ -12,6 +12,8 @@ type GameBoardProps = {
   onSelectBottomCard: (cardIndex: number) => void;
   isChoosingBottomCards: boolean;
   selectedBottomCards: number[];
+  tappedCards: string[];
+  onTapForMana: (card: BattlefieldCard) => void;
 };
 
 export function GameBoard({
@@ -24,10 +26,19 @@ export function GameBoard({
   onSelectBottomCard,
   isChoosingBottomCards,
   selectedBottomCards,
+  tappedCards,
+  onTapForMana,
 }: GameBoardProps) {
   return (
     <section className="game-board">
-      <Battlefield lands={lands} permanents={permanents} graveyard={graveyard} cardData={cardData} />
+      <Battlefield
+        lands={lands}
+        permanents={permanents}
+        graveyard={graveyard}
+        cardData={cardData}
+        tappedCards={tappedCards}
+        onTapForMana={onTapForMana}
+      />
 
       <HandZone
         cards={hand}

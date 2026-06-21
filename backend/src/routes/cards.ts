@@ -25,20 +25,38 @@ router.get("/:name", async (req, res) => {
   try {
     const cardName = req.params.name;
 
-    const response = await fetch(
-      `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`
-    );
+    async function fetchFromScryfall(mode: "exact" | "fuzzy") {
+      return fetch(
+        `https://api.scryfall.com/cards/named?${mode}=${encodeURIComponent(cardName)}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "MagicDeckSimulator/1.0",
+          },
+        }
+      );
+    }
+
+    let response = await fetchFromScryfall("exact");
 
     if (!response.ok) {
+      response = await fetchFromScryfall("fuzzy");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.log("Scryfall error:", data);
+
       return res.status(response.status).json({
-        message: `Could not find card: ${cardName}`,
+        message: data.details ?? `Could not find card: ${cardName}`,
       });
     }
 
-    const data = (await response.json()) as ScryfallCardResponse;
-
     const imageUrl =
-      data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal ?? "";
+      data.image_uris?.normal ??
+      data.card_faces?.[0]?.image_uris?.normal ??
+      "";
 
     res.json({
       name: data.name,
@@ -47,7 +65,9 @@ router.get("/:name", async (req, res) => {
       oracleText: data.oracle_text ?? data.card_faces?.[0]?.oracle_text ?? "",
       imageUrl,
     });
-  } catch {
+  } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       message: "Failed to fetch card from Scryfall",
     });

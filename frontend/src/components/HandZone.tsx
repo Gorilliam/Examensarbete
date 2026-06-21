@@ -21,6 +21,7 @@ export function HandZone({
     <div className="hand-zone">
       {cards.map((card, index) => {
         const data = cardData[card];
+        console.log("Hand card:", card, "Data:", data);
 
         const middle = (cards.length - 1) / 2;
         const offset = index - middle;
