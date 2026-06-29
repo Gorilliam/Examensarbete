@@ -137,38 +137,16 @@ setCardData(mappedCards);
   }
 
 
-  return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Magic Deck Simulator</h1>
-
-      <DeckInput
-        value={deckText}
-        onChange={setDeckText}
-        onImport={handleImportDeck}
-      />
-
-      <p>Imported cards: {importedDeckSize}</p>
-      <p>Turn: {turn}</p>
-      <p>Cards in library: {deck.length}</p>
-      <p>Land played this turn: {landPlayedThisTurn ? "Yes" : "No"}</p>
-
-      <ManaPoolDisplay manaPool={manaPool} />
-
-      {pendingManaSource && (
+ return (
+  <main>
+    {pendingManaSource && (
       <ManaChoiceOverlay
         sourceName={pendingManaSource}
         onChooseColor={chooseManaColor}
       />
     )}
-      <button disabled={deck.length === 0} onClick={nextTurn}>
-        Next turn
-      </button>
 
-      <button disabled={originalDeck.length < 7 } onClick={drawOpeningHand}>
-        Draw opening hand
-      </button>
-
-      {mulliganPhase !== "not_started" && mulliganPhase !== "complete" && (
+    {mulliganPhase !== "not_started" && mulliganPhase !== "complete" && (
       <MulliganOverlay
         phase={mulliganPhase}
         mulliganCount={mulliganCount}
@@ -177,32 +155,67 @@ setCardData(mappedCards);
         onKeep={keepHand}
         onConfirmBottomCards={confirmBottomCards}
       />
-      )}
+    )}
 
-{pendingRampSpell && (
-  <RampSelector
-    pendingRampSpell={pendingRampSpell}
-    targets={getValidRampTargets()}
-    cardData={cardData}
-    onSelectTarget={resolveRamp}
-  />
-)}
-
-      <GameBoard
-        hand={hand}
-        lands={lands}
-        permanents={permanents}
-        graveyard={graveyard}
+    {pendingRampSpell && (
+      <RampSelector
+        pendingRampSpell={pendingRampSpell}
+        targets={getValidRampTargets()}
         cardData={cardData}
-        onPlayCard={playCard}
-        onSelectBottomCard={selectBottomCard}
-        isChoosingBottomCards={mulliganPhase === "choosing_bottom"}
-        selectedBottomCards={selectedBottomCards}
-        tappedCards={tappedCards}
-        onTapForMana={tapForMana}
+        onSelectTarget={resolveRamp}
       />
-    </main>
-  );
+    )}
+
+    <section className="deck-import-panel">
+      <h1>Magic Deck Simulator</h1>
+
+      <DeckInput
+        value={deckText}
+        onChange={setDeckText}
+        onImport={handleImportDeck}
+      />
+    </section>
+
+    <GameBoard
+      hud={
+        <>
+          <div className="game-info-row">
+            <span>Imported: {importedDeckSize}</span>
+            <span>Turn: {turn}</span>
+            <span>Library: {deck.length}</span>
+            <span>Land played: {landPlayedThisTurn ? "Yes" : "No"}</span>
+          </div>
+
+          <ManaPoolDisplay manaPool={manaPool} />
+
+          <div className="action-buttons">
+            <button disabled=
+            {deck.length === 0 || mulliganPhase !== "complete"
+
+            } onClick={nextTurn}>
+              Next turn
+            </button>
+
+            <button disabled={originalDeck.length < 7} onClick={drawOpeningHand}>
+              Draw opening hand
+            </button>
+          </div>
+        </>
+      }
+      hand={hand}
+      lands={lands}
+      permanents={permanents}
+      graveyard={graveyard}
+      cardData={cardData}
+      onPlayCard={playCard}
+      onSelectBottomCard={selectBottomCard}
+      isChoosingBottomCards={mulliganPhase === "choosing_bottom"}
+      selectedBottomCards={selectedBottomCards}
+      tappedCards={tappedCards}
+      onTapForMana={tapForMana}
+    />
+  </main>
+);
 }
 
 export default App;

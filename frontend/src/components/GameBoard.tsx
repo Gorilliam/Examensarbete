@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import type { CardData, BattlefieldCard } from "../../../shared/types";
 import { Battlefield } from "./Battlefield";
 import { HandZone } from "./HandZone";
 
 type GameBoardProps = {
+  hud: ReactNode;
   hand: string[];
   lands: BattlefieldCard[];
   permanents: string[];
@@ -17,6 +19,7 @@ type GameBoardProps = {
 };
 
 export function GameBoard({
+  hud,
   hand,
   lands,
   permanents,
@@ -31,6 +34,8 @@ export function GameBoard({
 }: GameBoardProps) {
   return (
     <section className="game-board">
+      <div className="game-hud">{hud}</div>
+
       <Battlefield
         lands={lands}
         permanents={permanents}
